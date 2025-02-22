@@ -254,4 +254,4 @@ Error Response (if username already exists):
 
 ---
 # Conclusion
-## The Mental Health Assistant is a comprehensive web application designed to foster a community around mental health awareness and coping strategies. By offering an interactive space for sharing and discussing experiences, this platform promotes mental well-being and support.
+### The Mental Health Assistant is a comprehensive web application designed to foster a community around mental health awareness and coping strategies. By offering an interactive space for sharing and discussing experiences, this platform promotes mental well-being and support.
