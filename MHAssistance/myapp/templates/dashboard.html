@@ -1,0 +1,352 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Dashboard - Forum</title>
+    <style>
+        /* Basic layout for the dashboard */
+        body {
+            font-family: Arial, sans-serif;
+            margin: 0;
+            padding: 0;
+            display: flex;
+            height: 100vh;
+        }
+
+        /* Sidebar styling */
+        #sidebar {
+            width: 250px;
+            background-color: #f4f4f4;
+            padding: 20px;
+            box-shadow: 2px 0 5px rgba(0, 0, 0, 0.1);
+            height: 100%;
+        }
+
+        #sidebar h3 {
+            text-align: center;
+            margin-bottom: 20px;
+        }
+
+        #sidebar ul {
+            list-style-type: none;
+            padding: 0;
+        }
+
+        #sidebar ul li {
+            margin-bottom: 10px;
+        }
+
+        #sidebar ul li a {
+            text-decoration: none;
+            color: #333;
+            padding: 10px;
+            display: block;
+            background-color: #e2e2e2;
+            border-radius: 5px;
+        }
+
+        #sidebar ul li a:hover {
+            background-color: #ddd;
+        }
+
+        /* Main content styling */
+        #content {
+            flex-grow: 1;
+            padding: 20px;
+        }
+
+        #content h2 {
+            text-align: center;
+        }
+
+        .post {
+            margin-bottom: 20px;
+        }
+
+        .post-form {
+            padding: 15px;
+            background-color: #f9f9f9;
+            border-radius: 5px;
+        }
+
+        .post-actions {
+            margin-top: 10px;
+        }
+
+        .tag {
+            background-color: #e2e2e2;
+            padding: 3px 10px;
+            border-radius: 5px;
+            margin-right: 5px;
+        }
+
+        #postDetails {
+            display: none;
+            padding: 20px;
+            background-color: #f9f9f9;
+            border-radius: 5px;
+        }
+
+        .comments {
+            margin-top: 20px;
+        }
+
+        .comment {
+            margin-bottom: 10px;
+            padding: 10px;
+            background-color: #f1f1f1;
+            border-radius: 5px;
+        }
+
+        .comment-form {
+            margin-top: 20px;
+            display: flex;
+            flex-direction: column;
+        }
+
+        .comment-form input, .comment-form button {
+            margin-bottom: 10px;
+            padding: 10px;
+        }
+    </style>
+</head>
+<body>
+
+    <div id="sidebar">
+        <h3>Forum Tags</h3>
+        <ul id="tagsList">
+            <!-- Tags will be loaded dynamically here -->
+        </ul>
+    </div>
+
+    <div id="content">
+        <h2>Forum</h2>
+        <div id="postsList">
+            <!-- Posts will be dynamically loaded here -->
+        </div>
+
+        <div id="postDetails">
+            <h3 id="postTitle"></h3>
+            <p id="postContent"></p>
+            <p><strong>Posted by:</strong> <span id="postUser"></span></p>
+            <p><strong>Created at:</strong> <span id="postCreatedAt"></span></p>
+            <p><strong>Tags:</strong> <span id="postTags"></span></p>
+            <p><strong>Likes:</strong> <span id="postLikesCount"></span></p>
+
+            <div class="comments" id="commentsSection">
+                <h4>Comments</h4>
+                <!-- Comments will be loaded here -->
+            </div>
+
+            <div class="comment-form" id="commentFormSection">
+                <input type="text" id="commentContent" placeholder="Add a comment..." />
+                <button type="button" onclick="submitComment()">Post Comment</button>
+            </div>
+
+            <button onclick="goBackToPosts()">Back to Posts</button>
+        </div>
+
+    </div>
+
+    <script>
+        // Function to fetch posts based on selected tag
+        async function fetchPostsByTag(tag) {
+            const accessToken = localStorage.getItem('access_token');
+
+            if (!accessToken) {
+                alert("Please log in to view the posts.");
+                return;
+            }
+
+            try {
+                const response = await fetch(`http://127.0.0.1:8000/api/posts/?tag=${tag}`, {
+                    method: 'GET',
+                    headers: {
+                        'Authorization': `Bearer ${accessToken}`
+                    }
+                });
+
+                const posts = await response.json();
+
+                if (response.ok) {
+                    const postsList = document.getElementById('postsList');
+                    postsList.innerHTML = '';  // Clear previous posts
+
+                    // If there are posts, create a form-like view for each post
+                    posts.forEach(post => {
+                        const postDiv = document.createElement('div');
+                        postDiv.className = 'post';
+
+                        // Create the form structure
+                        postDiv.innerHTML = `
+                            <form class="post-form" id="post-${post.id}" onclick="viewPostDetails('${post.id}')">
+                                <h3>Title: ${post.title}</h3>
+                                <p><strong>Content:</strong> ${post.content}</p>
+                                <p><strong>Posted by:</strong> ${post.user}</p>
+                                <p><strong>Created at:</strong> ${new Date(post.created_at).toLocaleString()}</p>
+                                <p><strong>Tags:</strong> 
+                                    ${post.tags.length > 0 ? post.tags.map(tag => `<span class="tag">${tag.name}</span>`).join(', ') : 'No tags'}
+                                </p>
+                                <div class="post-actions">
+                                    <button type="button" onclick="likePost('${post.id}')">Like (${post.likes_count})</button>
+                                    <button type="button" onclick="viewComments('${post.id}')">View Comments</button>
+                                </div>
+                            </form>
+                            <hr>
+                        `;
+
+                        postsList.appendChild(postDiv);
+                    });
+                } else {
+                    alert('Failed to fetch posts');
+                }
+            } catch (error) {
+                console.error('Error fetching posts:', error);
+                alert('An error occurred while fetching posts.');
+            }
+        }
+
+        // Function to view the details of a particular post
+        async function viewPostDetails(postId) {
+            const accessToken = localStorage.getItem('access_token');
+
+            if (!accessToken) {
+                alert("Please log in to view the post.");
+                return;
+            }
+
+            try {
+                const response = await fetch(`http://127.0.0.1:8000/api/posts/${postId}`, {
+                    method: 'GET',
+                    headers: {
+                        'Authorization': `Bearer ${accessToken}`
+                    }
+                });
+
+                const post = await response.json();
+
+                if (response.ok) {
+                    document.getElementById('postTitle').innerText = post.title;
+                    document.getElementById('postContent').innerText = post.content;
+                    document.getElementById('postUser').innerText = post.user;
+                    document.getElementById('postCreatedAt').innerText = new Date(post.created_at).toLocaleString();
+                    document.getElementById('postTags').innerHTML = post.tags.length > 0 ? post.tags.map(tag => `<span class="tag">${tag.name}</span>`).join(', ') : 'No tags';
+                    document.getElementById('postLikesCount').innerText = post.likes_count;
+
+                    // Display comments
+                    const commentsSection = document.getElementById('commentsSection');
+                    commentsSection.innerHTML = '';
+                    post.comments.forEach(comment => {
+                        const commentDiv = document.createElement('div');
+                        commentDiv.className = 'comment';
+                        commentDiv.innerHTML = `<p><strong>${comment.user}:</strong> ${comment.content}</p><p><small>Posted at: ${new Date(comment.created_at).toLocaleString()}</small></p>`;
+                        commentsSection.appendChild(commentDiv);
+                    });
+
+                    // Show post details and hide posts list
+                    document.getElementById('postsList').style.display = 'none';
+                    document.getElementById('postDetails').style.display = 'block';
+                } else {
+                    alert('Failed to fetch post details');
+                }
+            } catch (error) {
+                console.error('Error fetching post details:', error);
+                alert('An error occurred while fetching post details.');
+            }
+        }
+
+        // Function to go back to the posts list
+        function goBackToPosts() {
+            document.getElementById('postsList').style.display = 'block';
+            document.getElementById('postDetails').style.display = 'none';
+        }
+
+        // Function to like a post
+        async function likePost(postId) {
+            const accessToken = localStorage.getItem('access_token');
+
+            if (!accessToken) {
+                alert("Please log in to like the post.");
+                return;
+            }
+
+            try {
+                const response = await fetch(`http://127.0.0.1:8000/api/posts/${postId}/like/`, {
+                    method: 'POST',
+                    headers: {
+                        'Authorization': `Bearer ${accessToken}`
+                    }
+                });
+
+                const data = await response.json();
+                if (response.ok) {
+                    alert(data.detail);  // Show the "Post liked" message
+                } else {
+                    alert('Failed to like the post');
+                }
+            } catch (error) {
+                console.error('Error liking post:', error);
+                alert('An error occurred while liking the post.');
+            }
+        }
+
+        // Function to submit a comment
+        async function submitComment() {
+            const postId = document.getElementById('postTitle').innerText;
+            const content = document.getElementById('commentContent').value;
+            const accessToken = localStorage.getItem('access_token');
+
+            if (!accessToken) {
+                alert("Please log in to comment.");
+                return;
+            }
+
+            if (!content) {
+                alert("Comment cannot be empty.");
+                return;
+            }
+
+            try {
+                const response = await fetch(`http://127.0.0.1:8000/api/posts/${postId}/comment/`, {
+                    method: 'POST',
+                    headers: {
+                        'Authorization': `Bearer ${accessToken}`,
+                        'Content-Type': 'application/json'
+                    },
+                    body: JSON.stringify({ content })
+                });
+
+                if (response.ok) {
+                    alert('Comment posted successfully!');
+                    document.getElementById('commentContent').value = '';  // Clear the comment field
+                    viewPostDetails(postId);  // Reload post details to show the new comment
+                } else {
+                    alert('Failed to post the comment');
+                }
+            } catch (error) {
+                console.error('Error posting comment:', error);
+                alert('An error occurred while posting the comment.');
+            }
+        }
+
+        // Fetch and display posts based on tags when the page loads
+        document.addEventListener('DOMContentLoaded', function() {
+            const tags = ['Health', 'Mental Health', 'Fitness', 'Mindfulness', 'Breathing Exercises'];
+
+            const tagsList = document.getElementById('tagsList');
+            tags.forEach(tag => {
+                const tagItem = document.createElement('li');
+                const tagLink = document.createElement('a');
+                tagLink.href = '#';
+                tagLink.innerText = tag;
+                tagLink.onclick = function() {
+                    fetchPostsByTag(tag); // Fetch posts when a tag is clicked
+                };
+                tagItem.appendChild(tagLink);
+                tagsList.appendChild(tagItem);
+            });
+        });
+    </script>
+</body>
+</html>

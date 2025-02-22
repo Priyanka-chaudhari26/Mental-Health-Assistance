@@ -1,0 +1,176 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>User Registration</title>
+    <style>
+        /* Global styles */
+        body {
+            font-family: Arial, sans-serif;
+            background-color: #f4f4f4;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            height: 100vh;
+            margin: 0;
+        }
+
+        h2 {
+            text-align: center;
+            color: #333;
+        }
+
+        /* Form styling */
+        #registrationForm {
+            background-color: #fff;
+            padding: 20px;
+            border-radius: 8px;
+            box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
+            width: 300px;
+        }
+
+        #registrationForm input {
+            width: 100%;
+            padding: 10px;
+            margin: 10px 0;
+            border-radius: 5px;
+            border: 1px solid #ddd;
+            box-sizing: border-box;
+        }
+
+        #registrationForm input[type="email"],
+        #registrationForm input[type="password"] {
+            margin-top: 5px;
+        }
+
+        #registrationForm button {
+            width: 100%;
+            padding: 12px;
+            background-color: #4CAF50;
+            color: white;
+            border: none;
+            border-radius: 5px;
+            font-size: 16px;
+            cursor: pointer;
+        }
+
+        #registrationForm button:hover {
+            background-color: #45a049;
+        }
+
+        /* Styling for notification messages */
+        .notification {
+            display: none;
+            padding: 15px;
+            margin-top: 20px;
+            border-radius: 5px;
+            text-align: center;
+        }
+
+        .success {
+            background-color: #d4edda;
+            color: #155724;
+        }
+
+        .error {
+            background-color: #f8d7da;
+            color: #721c24;
+        }
+
+        /* Privacy message styling */
+        p {
+            font-size: 14px;
+            color: #555;
+            margin-bottom: 20px;
+        }
+        .login-link {
+            margin-top: 20px;
+            text-align: center;
+        }
+        .login-link a {
+            text-decoration: none;
+            color: #007bff;
+            font-weight: bold;
+        }
+    </style>
+</head>
+<body>
+    <div>
+        <h2>Register</h2>
+
+        <!-- Notification area -->
+        <div id="notification" class="notification"></div>
+
+        <form id="registrationForm" method="POST" action="/register/">
+            <label>Username: </label>
+            <input type="text" name="anon_username" placeholder="Username" required><br>
+            <p>We respect your privacy. Email is optional here. Adding email just ensures account recovery.</p>
+            <label>Email: </label>
+            <input type="email" name="email" placeholder="Email (optional)"><br> 
+            <label>Password: </label>
+            <input type="password" name="password" placeholder="Password" required><br>
+            <button type="submit">Register</button>
+        </form>
+
+        <div class="login-link">
+            <p>Already registered? <a href="{% url 'login' %}">Login here</a></p>
+        </div>
+    </div>
+
+    <script>
+        const form = document.getElementById('registrationForm');
+        const notification = document.getElementById('notification');
+
+        form.addEventListener('submit', async (e) => {
+            e.preventDefault();  // Prevent default form submission
+
+            const formData = new FormData(form);
+            const data = {
+                anon_username: formData.get('anon_username'),
+                email: formData.get('email'), 
+                password: formData.get('password')
+            };
+
+            try {
+                const response = await fetch('/api/register/', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json'
+                    },
+                    body: JSON.stringify(data)
+                });
+
+                const result = await response.json();
+                console.log(result);
+
+                if (result.email && result.email.length > 0) {
+                    notification.textContent = result.email[0];  // Display the error message from the backend
+                    notification.className = 'notification error';
+                    notification.style.display = 'block';
+                } else if (response.ok) {
+                    // Show success notification
+                    notification.textContent = result.message || 'User registered successfully!';
+                    notification.className = 'notification success';
+                    notification.style.display = 'block';
+
+                    // Clear form fields
+                    form.reset();
+                } else {
+                    // Show error notification with suggestion if available
+                    let errorMessage = result.error || 'Registration failed!';
+                    if (result.suggestion) {
+                        errorMessage += ` Suggestion: ${result.suggestion}`;
+                    }
+                    notification.textContent = errorMessage;
+                    notification.className = 'notification error';
+                    notification.style.display = 'block';
+                }
+            } catch (error) {
+                // Show network error
+                notification.textContent = 'An error occurred. Please try again.';
+                notification.className = 'notification error';
+                notification.style.display = 'block';
+            }
+        });
+    </script>
+</body>
+</html>

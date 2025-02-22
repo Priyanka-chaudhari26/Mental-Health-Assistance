@@ -1,0 +1,160 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>User Login</title>
+    <style>
+        /* Global styles */
+        body {
+            font-family: Arial, sans-serif;
+            background-color: #f4f4f4;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            height: 100vh;
+            margin: 0;
+        }
+
+        h2 {
+            text-align: center;
+            color: #333;
+        }
+
+        /* Form styling */
+        #loginForm {
+            background-color: #fff;
+            padding: 20px;
+            border-radius: 8px;
+            box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
+            width: 300px;
+            text-align: center;
+        }
+
+        #loginForm input {
+            width: 100%;
+            padding: 10px;
+            margin: 10px 0;
+            border-radius: 5px;
+            border: 1px solid #ddd;
+            box-sizing: border-box;
+        }
+
+        #loginForm button {
+            width: 100%;
+            padding: 12px;
+            background-color: #4CAF50;
+            color: white;
+            border: none;
+            border-radius: 5px;
+            font-size: 16px;
+            cursor: pointer;
+        }
+
+        #loginForm button:hover {
+            background-color: #45a049;
+        }
+
+        /* Styling for notification messages */
+        .notification {
+            display: none;
+            padding: 15px;
+            margin-top: 20px;
+            border-radius: 5px;
+            text-align: center;
+        }
+
+        .success {
+            background-color: #d4edda;
+            color: #155724;
+        }
+
+        .error {
+            background-color: #f8d7da;
+            color: #721c24;
+        }
+
+        /* Error message styling */
+        p {
+            font-size: 14px;
+            color: #555;
+        }
+
+    </style>
+</head>
+<body>
+    <div>
+        <h2>Login</h2>
+
+        <!-- Notification area -->
+        <div id="notification" class="notification"></div>
+
+        <form id="loginForm">
+            <input type="text" id="anon_username" name="anon_username" placeholder="Username" required><br>
+            <input type="password" id="password" name="password" placeholder="Password" required><br>
+            <button type="submit">Login</button>
+        </form>
+    </div>
+
+    <script>
+        const form = document.getElementById('loginForm');
+        const notification = document.getElementById('notification');
+
+        form.addEventListener('submit', async (e) => {
+            e.preventDefault();  // Prevent default form submission
+
+            const anon_username = document.getElementById('anon_username').value;
+            const password = document.getElementById('password').value;
+
+            if (!anon_username || !password) {
+                notification.textContent = 'Username and password are required!';
+                notification.className = 'notification error';
+                notification.style.display = 'block';
+                return;
+            }
+
+            const data = {
+                anon_username: anon_username,
+                password: password
+            };
+
+            try {
+                const response = await fetch('/api/login/', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json'
+                    },
+                    body: JSON.stringify(data)
+                });
+
+                const result = await response.json();
+
+                if (response.ok) {
+                    // Successful login
+                    notification.textContent = result.message || 'Login successful!';
+                    notification.className = 'notification success';
+                    notification.style.display = 'block';
+
+                    localStorage.setItem('access_token', result.access);
+                    localStorage.setItem('refresh_token', result.refresh);
+
+                    // You can store the tokens or user data here if needed
+                    console.log('Access Token:', result.access);
+                    console.log('User Info:', result.user);
+                    window.location.href = 'http://127.0.0.1:8000/dashboard'
+                } else {
+                    // Show error message
+                    notification.textContent = result.error || 'Invalid credentials';
+                    notification.className = 'notification error';
+                    notification.style.display = 'block';
+                }
+            } catch (error) {
+                // Show network error
+                notification.textContent = 'An error occurred. Please try again.';
+                notification.className = 'notification error';
+                notification.style.display = 'block';
+            }
+        });
+    </script>
+</body>
+</html>
