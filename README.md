@@ -1,7 +1,7 @@
 # Mental Health Assistant - Web Application
 
-## Link to Documentation: [Click here to view the file](https://drive.google.com/file/d/1pBvLReqIYXV7kCSPzNm6oYOgWo2OeepF/view?usp=sharing)
-## Link to Video: [Click here to view the Video walkthrough](https://drive.google.com/file/d/1D29Wx3SXrGEYszWQ4E5vbf_Xk93PUXyp/view?usp=sharing)
+### Link to Documentation: [Click here to view the file](https://drive.google.com/file/d/1pBvLReqIYXV7kCSPzNm6oYOgWo2OeepF/view?usp=sharing)
+### Link to Video: [Click here to view the Video walkthrough](https://drive.google.com/file/d/1D29Wx3SXrGEYszWQ4E5vbf_Xk93PUXyp/view?usp=sharing)
 
 ## Overview
 
